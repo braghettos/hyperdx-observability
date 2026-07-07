@@ -16,10 +16,10 @@ rules:
   - apiGroups: ["observability.krateo.io"]
     resources: ["troubleshootingreports", "troubleshootingreports/status"]
     verbs: ["create", "get", "list", "patch", "update"]
-  # the reconciler reads Alert CRs (desired) and writes their status (mirrored HyperDX state)
+  # the reconciler reads Alert CRs (desired), seeds defaults, and writes their status
   - apiGroups: ["observability.krateo.io"]
     resources: ["alerts", "alerts/status"]
-    verbs: ["get", "list", "watch", "patch", "update"]
+    verbs: ["get", "list", "watch", "create", "patch", "update"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding

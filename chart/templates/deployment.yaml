@@ -35,6 +35,19 @@ spec:
               value: {{ .Values.reconciler.interval | quote }}
             - name: WEBHOOK_NAME
               value: {{ .Values.reconciler.webhookName | quote }}
+            {{- if .Values.defaultAlerts.enabled }}
+            {{- $alerts := list }}
+            {{- with .Values.defaultAlerts.errorLogVolume }}{{- if .enabled }}
+            {{- $alerts = append $alerts (dict "name" "error-log-volume" "displayName" "Error log volume" "where" "SeverityText:error OR SeverityText:Error OR SeverityText:ERROR" "interval" .interval "threshold" .threshold "thresholdType" "above" "message" "Error-log volume is elevated — Autopilot will auto-triage the root cause.") }}
+            {{- end }}{{- end }}
+            {{- with .Values.defaultAlerts.warningLogVolume }}{{- if .enabled }}
+            {{- $alerts = append $alerts (dict "name" "warning-log-volume" "displayName" "Warning log volume" "where" "SeverityText:warn OR SeverityText:warning OR SeverityText:WARN" "interval" .interval "threshold" .threshold "thresholdType" "above" "message" "Warning-log volume crossed the threshold — Autopilot will summarise likely causes.") }}
+            {{- end }}{{- end }}
+            # Default alerts are SEEDED by the reconciler (env), not shipped as chart CRs — Helm
+            # can't validate a CR before its CRD exists in the same render.
+            - name: DEFAULT_ALERTS_JSON
+              value: {{ $alerts | toJson | quote }}
+            {{- end }}
             - name: HYPERDX_URL
               value: {{ .Values.hyperdx.url | quote }}
             - name: HYPERDX_ADMIN_EMAIL
