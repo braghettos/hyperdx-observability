@@ -1,0 +1,187 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "additionalProperties": true,
+  "title": "HyperdxObservability",
+  "description": "HyperDX-alert auto-troubleshooting for Krateo: declares alerts as CRs, reconciles them into HyperDX, and runs an Autopilot root-cause analysis when one fires.",
+  "properties": {
+    "installCRDs": {
+      "type": "boolean",
+      "default": true,
+      "title": "installCRDs",
+      "description": "Install the Alert and TroubleshootingReport CRDs (observability.krateo.io)."
+    },
+    "image": {
+      "type": "object",
+      "title": "image",
+      "description": "The krateo-alert-troubleshooter image (reconciler + webhook handler).",
+      "additionalProperties": true,
+      "properties": {
+        "repository": {
+          "type": "string",
+          "default": "ghcr.io/braghettos/krateo-alert-troubleshooter",
+          "title": "repository",
+          "description": "Container image repository."
+        },
+        "tag": {
+          "type": "string",
+          "default": "latest",
+          "title": "tag",
+          "description": "Container image tag."
+        },
+        "pullPolicy": {
+          "type": "string",
+          "default": "Always",
+          "title": "pullPolicy",
+          "description": "Image pull policy (Always / IfNotPresent / Never)."
+        }
+      }
+    },
+    "hyperdx": {
+      "type": "object",
+      "title": "hyperdx",
+      "description": "HyperDX (ClickStack) endpoint + admin identity the reconciler uses (session API).",
+      "additionalProperties": true,
+      "properties": {
+        "url": {
+          "type": "string",
+          "default": "http://krateo-clickstack.krateo-system.svc:3000",
+          "title": "url",
+          "description": "In-cluster HyperDX base URL."
+        },
+        "adminEmail": {
+          "type": "string",
+          "default": "admin@krateo.io",
+          "title": "adminEmail",
+          "description": "HyperDX admin email. On a fresh HyperDX the reconciler registers this admin (creating the team); afterwards it logs in."
+        },
+        "adminPassword": {
+          "type": "string",
+          "default": "",
+          "title": "adminPassword",
+          "description": "HyperDX admin password. Leave empty to auto-generate a policy-compliant password persisted in the hyperdx-admin-creds Secret (kept across upgrades); set it to pin a known password."
+        }
+      }
+    },
+    "autopilot": {
+      "type": "object",
+      "title": "autopilot",
+      "description": "Autopilot A2A agent that performs the root-cause analysis when an alert fires.",
+      "additionalProperties": true,
+      "properties": {
+        "a2aUrl": {
+          "type": "string",
+          "default": "http://krateo-autopilot.krateo-system.svc:8080/",
+          "title": "a2aUrl",
+          "description": "Autopilot A2A endpoint (JSON-RPC message/stream)."
+        }
+      }
+    },
+    "troubleshooter": {
+      "type": "object",
+      "title": "troubleshooter",
+      "description": "The webhook receiver + Autopilot handler.",
+      "additionalProperties": true,
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "title": "enabled",
+          "description": "Run the /webhook receiver that turns a fired alert into a TroubleshootingReport."
+        },
+        "reportCooldown": {
+          "type": "integer",
+          "default": 1800,
+          "title": "reportCooldown",
+          "description": "Dedup window in seconds: don't re-analyze the same alert while a report is in-flight or newer than this."
+        }
+      }
+    },
+    "reconciler": {
+      "type": "object",
+      "title": "reconciler",
+      "description": "Reconciles Alert CRs into HyperDX (config) and mirrors live state into their status.",
+      "additionalProperties": true,
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "title": "enabled",
+          "description": "Run the Alert-CR reconciler."
+        },
+        "interval": {
+          "type": "integer",
+          "default": 60,
+          "title": "interval",
+          "description": "Reconcile cycle, seconds."
+        },
+        "webhookName": {
+          "type": "string",
+          "default": "krateo-autopilot",
+          "title": "webhookName",
+          "description": "Name of the HyperDX webhook destination (points back at the handler)."
+        }
+      }
+    },
+    "defaultAlerts": {
+      "type": "object",
+      "title": "defaultAlerts",
+      "description": "Default log-volume Alert CRs shipped with the feature.",
+      "additionalProperties": true,
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "title": "enabled",
+          "description": "Ship the default Alert CRs."
+        },
+        "errorLogVolume": {
+          "type": "object",
+          "title": "errorLogVolume",
+          "additionalProperties": true,
+          "properties": {
+            "enabled": { "type": "boolean", "default": true, "title": "enabled", "description": "Ship the error-log-volume alert." },
+            "threshold": { "type": "integer", "default": 1, "title": "threshold", "description": "Fire when error-log count over the interval exceeds this." },
+            "interval": { "type": "string", "default": "5m", "title": "interval", "description": "Evaluation window (1m/5m/15m/30m/1h/6h/12h/1d)." }
+          }
+        },
+        "warningLogVolume": {
+          "type": "object",
+          "title": "warningLogVolume",
+          "additionalProperties": true,
+          "properties": {
+            "enabled": { "type": "boolean", "default": true, "title": "enabled", "description": "Ship the warning-log-volume alert." },
+            "threshold": { "type": "integer", "default": 25, "title": "threshold", "description": "Fire when warning-log count over the interval exceeds this." },
+            "interval": { "type": "string", "default": "15m", "title": "interval", "description": "Evaluation window (1m/5m/15m/30m/1h/6h/12h/1d)." }
+          }
+        }
+      }
+    },
+    "resources": {
+      "type": "object",
+      "title": "resources",
+      "description": "Pod resources for the troubleshooter/reconciler deployment.",
+      "additionalProperties": true,
+      "properties": {
+        "requests": {
+          "type": "object",
+          "title": "requests",
+          "additionalProperties": true,
+          "properties": {
+            "cpu": { "type": "string", "default": "25m", "title": "cpu" },
+            "memory": { "type": "string", "default": "64Mi", "title": "memory" }
+          }
+        },
+        "limits": {
+          "type": "object",
+          "title": "limits",
+          "additionalProperties": true,
+          "properties": {
+            "cpu": { "type": "string", "default": "250m", "title": "cpu" },
+            "memory": { "type": "string", "default": "256Mi", "title": "memory" }
+          }
+        }
+      }
+    }
+  }
+}

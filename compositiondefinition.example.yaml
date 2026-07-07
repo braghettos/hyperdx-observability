@@ -11,12 +11,12 @@ metadata:
     "krateo.io/connector-verbose": "true"
 spec:
   chart:
-    repo: hyperdx-observability
-    url: oci://ghcr.io/braghettos/hyperdx-observability   # <- publish target (see README)
-    version: 0.1.0
+    url: oci://ghcr.io/braghettos/hyperdx-observability
+    version: 0.1.1
 ---
-# The instance CR (shape mirrors values.yaml — the "if"). Creating this deploys the feature.
-apiVersion: composition.krateo.io/v1alpha1
+# The instance CR (shape mirrors values.schema.json — the "if"). Creating this deploys the feature.
+# The core-provider derives the API from the chart version: composition.krateo.io/v0-1-1.
+apiVersion: composition.krateo.io/v0-1-1
 kind: HyperdxObservability
 metadata:
   name: hyperdx-observability
