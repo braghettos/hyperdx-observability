@@ -1,0 +1,117 @@
+{{- if .Values.installCRDs }}
+# Alert — desired HyperDX alert, reconciled by the session-driven reconciler.
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: alerts.observability.krateo.io
+spec:
+  group: observability.krateo.io
+  scope: Namespaced
+  names:
+    kind: Alert
+    listKind: AlertList
+    plural: alerts
+    singular: alert
+    categories: [krateo, observability]
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      subresources:
+        status: {}
+      additionalPrinterColumns:
+        - { name: State, type: string, jsonPath: .status.state }
+        - { name: Phase, type: string, jsonPath: .status.phase }
+        - { name: Interval, type: string, jsonPath: .spec.interval }
+        - { name: Threshold, type: number, jsonPath: .spec.threshold }
+        - { name: Age, type: date, jsonPath: .metadata.creationTimestamp }
+      schema:
+        openAPIV3Schema:
+          type: object
+          required: [spec]
+          properties:
+            spec:
+              type: object
+              required: [interval, threshold, thresholdType]
+              properties:
+                displayName: { type: string }
+                where: { type: string, default: "" }
+                interval:
+                  type: string
+                  enum: ["1m", "5m", "15m", "30m", "1h", "6h", "12h", "1d"]
+                  default: "5m"
+                threshold: { type: number }
+                thresholdType:
+                  type: string
+                  enum: [above, below, above_exclusive, below_or_equal, equal, not_equal, between, not_between]
+                  default: above
+                message: { type: string }
+            status:
+              type: object
+              properties:
+                hyperdxAlertId: { type: string }
+                hyperdxDashboardId: { type: string }
+                state: { type: string }
+                phase: { type: string }
+                error: { type: string }
+                lastSyncedAt: { type: string, format: date-time }
+---
+# TroubleshootingReport — record of an auto-run Autopilot RCA, created when an alert fires.
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: troubleshootingreports.observability.krateo.io
+spec:
+  group: observability.krateo.io
+  scope: Namespaced
+  names:
+    kind: TroubleshootingReport
+    listKind: TroubleshootingReportList
+    plural: troubleshootingreports
+    singular: troubleshootingreport
+    shortNames: [tsr]
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      subresources:
+        status: {}
+      additionalPrinterColumns:
+        - { name: Alert, type: string, jsonPath: .spec.alertName }
+        - { name: Phase, type: string, jsonPath: .status.phase }
+        - { name: Triggered, type: string, jsonPath: .spec.triggeredAt }
+        - { name: Age, type: date, jsonPath: .metadata.creationTimestamp }
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              required: [alertName]
+              properties:
+                alertName: { type: string }
+                alertNamespace: { type: string }
+                alertState: { type: string }
+                prompt: { type: string }
+                triggeredAt: { type: string }
+                hyperdxAlertId: { type: string }
+            status:
+              type: object
+              properties:
+                phase:
+                  type: string
+                  enum: [Pending, Analyzing, Ready, Failed]
+                report: { type: string }
+                error: { type: string }
+                completedAt: { type: string }
+                conditions:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      type: { type: string }
+                      status: { type: string }
+                      reason: { type: string }
+                      message: { type: string }
+                      lastTransitionTime: { type: string }
+{{- end }}

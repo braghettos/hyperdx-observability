@@ -1,0 +1,35 @@
+name: release
+
+# Package the Helm chart + push it to GHCR (OCI) on every push to main and on tags.
+# The Krateo CompositionDefinition installs from oci://ghcr.io/<owner>/hyperdx-observability.
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+
+jobs:
+  package-push:
+    name: Package and push chart
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.15.4
+
+      - name: Lint
+        run: helm lint chart
+
+      - name: Login to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io -u ${{ github.repository_owner }} --password-stdin
+
+      - name: Package + push
+        run: |
+          helm package chart --destination /tmp/dist
+          helm push /tmp/dist/hyperdx-observability-*.tgz oci://ghcr.io/${{ github.repository_owner }}

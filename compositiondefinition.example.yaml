@@ -1,0 +1,40 @@
+# Register hyperdx-observability as a Krateo composition. The CompositionDefinition points the
+# core-provider at the packaged chart; Krateo then generates an API (a CRD from values.schema.json)
+# so an operator can instantiate the feature by creating a HyperdxObservability CR. Publish the
+# chart (see README) and set the OCI/tgz URL + version below.
+apiVersion: core.krateo.io/v1alpha1
+kind: CompositionDefinition
+metadata:
+  name: hyperdx-observability
+  namespace: krateo-system
+  annotations:
+    "krateo.io/connector-verbose": "true"
+spec:
+  chart:
+    repo: hyperdx-observability
+    url: oci://ghcr.io/braghettos/hyperdx-observability   # <- publish target (see README)
+    version: 0.1.0
+---
+# The instance CR (shape mirrors values.yaml — the "if"). Creating this deploys the feature.
+apiVersion: composition.krateo.io/v1alpha1
+kind: HyperdxObservability
+metadata:
+  name: hyperdx-observability
+  namespace: krateo-system
+spec:
+  installCRDs: true
+  hyperdx:
+    url: http://krateo-clickstack.krateo-system.svc:3000
+    adminEmail: admin@krateo.io
+    # adminPassword left empty -> auto-generated + persisted in hyperdx-admin-creds
+  autopilot:
+    a2aUrl: http://krateo-autopilot.krateo-system.svc:8080/
+  reconciler:
+    enabled: true
+    interval: 60
+  troubleshooter:
+    enabled: true
+  defaultAlerts:
+    enabled: true
+    errorLogVolume: { enabled: true, threshold: 1, interval: "5m" }
+    warningLogVolume: { enabled: true, threshold: 25, interval: "15m" }

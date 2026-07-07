@@ -1,0 +1,46 @@
+# hyperdx-observability — values (the "if": every toggle that shapes the assembly).
+image:
+  repository: ghcr.io/braghettos/krateo-alert-troubleshooter
+  tag: latest
+  pullPolicy: Always
+
+# HyperDX (ClickStack) endpoint + admin identity the reconciler uses (session API). On a fresh
+# HyperDX the reconciler registers this admin (creating the team); afterwards it logs in.
+hyperdx:
+  url: http://krateo-clickstack.krateo-system.svc:3000
+  adminEmail: admin@krateo.io
+  # Leave adminPassword empty to auto-generate a policy-compliant password, persisted in the
+  # hyperdx-admin-creds Secret (kept across upgrades). Set it to pin a known password.
+  adminPassword: ""
+
+# Autopilot A2A agent that performs the root-cause analysis when an alert fires.
+autopilot:
+  a2aUrl: http://krateo-autopilot.krateo-system.svc:8080/
+
+# --- feature toggles (the "if") ---
+installCRDs: true          # install the Alert + TroubleshootingReport CRDs
+
+troubleshooter:
+  enabled: true            # run the webhook receiver -> Autopilot handler (the /webhook endpoint)
+  reportCooldown: 1800     # seconds: dedup window — don't re-analyze the same alert within this
+
+reconciler:
+  enabled: true            # reconcile Alert CRs -> HyperDX (config) and mirror state (status)
+  interval: 60             # reconcile cycle, seconds
+  webhookName: krateo-autopilot   # the HyperDX webhook destination name (points back at the handler)
+
+defaultAlerts:
+  enabled: true            # ship the default log-volume Alert CRs
+  errorLogVolume:
+    enabled: true
+    threshold: 1
+    interval: "5m"
+  warningLogVolume:
+    enabled: true
+    threshold: 25
+    interval: "15m"
+
+# Pod resources for the troubleshooter/reconciler deployment.
+resources:
+  requests: { cpu: 25m, memory: 64Mi }
+  limits: { cpu: 250m, memory: 256Mi }

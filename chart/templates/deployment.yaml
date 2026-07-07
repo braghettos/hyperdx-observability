@@ -1,0 +1,67 @@
+{{- if .Values.troubleshooter.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "hobs.name" . }}
+  namespace: {{ .Release.Namespace }}
+  labels: {{- include "hobs.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: {{ include "hobs.name" . }} }
+  template:
+    metadata:
+      labels:
+        app: {{ include "hobs.name" . }}
+        {{- include "hobs.labels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "hobs.name" . }}
+      containers:
+        - name: handler
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: 8080
+          env:
+            - name: NAMESPACE
+              value: {{ .Release.Namespace | quote }}
+            - name: AUTOPILOT_A2A_URL
+              value: {{ .Values.autopilot.a2aUrl | quote }}
+            - name: REPORT_COOLDOWN
+              value: {{ .Values.troubleshooter.reportCooldown | quote }}
+            - name: RECONCILER_ENABLED
+              value: {{ .Values.reconciler.enabled | quote }}
+            - name: RECONCILE_INTERVAL
+              value: {{ .Values.reconciler.interval | quote }}
+            - name: WEBHOOK_NAME
+              value: {{ .Values.reconciler.webhookName | quote }}
+            - name: HYPERDX_URL
+              value: {{ .Values.hyperdx.url | quote }}
+            - name: HYPERDX_ADMIN_EMAIL
+              valueFrom: { secretKeyRef: { name: hyperdx-admin-creds, key: email } }
+            - name: HYPERDX_ADMIN_PASSWORD
+              valueFrom: { secretKeyRef: { name: hyperdx-admin-creds, key: password } }
+          readinessProbe:
+            httpGet: { path: /healthz, port: 8080 }
+            initialDelaySeconds: 3
+          resources: {{- toYaml .Values.resources | nindent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            capabilities: { drop: ["ALL"] }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "hobs.name" . }}
+  namespace: {{ .Release.Namespace }}
+  labels: {{- include "hobs.labels" . | nindent 4 }}
+spec:
+  # Headless resolves the name -> pod IP for HyperDX's webhook POST even where the ClusterIP range
+  # is exhausted. Set a normal ClusterIP by adding a `clusterIP:` override if you prefer.
+  clusterIP: None
+  selector: { app: {{ include "hobs.name" . }} }
+  ports:
+    - port: 8080
+      targetPort: 8080
+{{- end }}

@@ -1,0 +1,13 @@
+apiVersion: v2
+name: hyperdx-observability
+description: >
+  Auto-troubleshooting for HyperDX/ClickStack alerts on Krateo. Declares alerts as Kubernetes
+  Alert CRs, reconciles them into HyperDX via its session API, and — when an alert fires — runs an
+  Autopilot root-cause analysis captured as a TroubleshootingReport CR. The assembly/installer unit
+  for the feature; feature toggles live in values.yaml (the "if").
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords: [krateo, observability, hyperdx, clickstack, alerts, autopilot, troubleshooting]
+maintainers:
+  - name: Krateo
