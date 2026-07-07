@@ -12,11 +12,11 @@ metadata:
 spec:
   chart:
     url: oci://ghcr.io/braghettos/hyperdx-observability
-    version: 0.1.1
+    version: 0.1.2
 ---
 # The instance CR (shape mirrors values.schema.json — the "if"). Creating this deploys the feature.
-# The core-provider derives the API from the chart version: composition.krateo.io/v0-1-1.
-apiVersion: composition.krateo.io/v0-1-1
+# The core-provider derives the API from the chart version: composition.krateo.io/v0-1-2.
+apiVersion: composition.krateo.io/v0-1-2
 kind: HyperdxObservability
 metadata:
   name: hyperdx-observability
