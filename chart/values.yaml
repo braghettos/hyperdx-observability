@@ -1,8 +1,8 @@
 # hyperdx-observability — values (the "if": every toggle that shapes the assembly).
 image:
   repository: ghcr.io/braghettos/krateo-alert-troubleshooter
-  tag: latest
-  pullPolicy: Always
+  tag: v0.2.0
+  pullPolicy: IfNotPresent
 
 # HyperDX (ClickStack) endpoint + admin identity the reconciler uses (session API). On a fresh
 # HyperDX the reconciler registers this admin (creating the team); afterwards it logs in.
